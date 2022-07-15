@@ -9,7 +9,7 @@ class AdminTracker:
                 docker_mode: bool = True) -> None:
         """Manages administration privileges"""
         self.docker_mode = docker_mode
-        self.secret = secret
+        self.secret = secret if secret != "DISABLED" else None
         self.local_dir = '/data' if self.docker_mode else local_dir
         self.admins_filename = admins_file
         self.admins_file_path = os.path.join(self.local_dir, self.admins_filename)
