@@ -1,6 +1,6 @@
 # OutlineGram
 
-## An Outline Server management Telegram bot built on AIOgram 
+## An Outline Server management Telegram bot built on AIOgram
 
 ### [GitHub repository](https://github.com/0xb1b1/outlinegram)
 
