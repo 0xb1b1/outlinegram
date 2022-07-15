@@ -4,6 +4,7 @@ services:
   app:
     build:
       context: .
+    container_name: 'outlinegram-app'
     environment:
       - TELEGRAM_API_TOKEN='1234567890:TELEG-RAMTO_KEN'
       - ADMIN_SECRET='adminSecretString_12345'
@@ -11,4 +12,6 @@ services:
       - OUTLINE_SERVER='0.0.0.0'
       - OUTLINE_API_PORT='12345'
       - OUTLINE_API_TOKEN='apiToken12345'
+    volumes:
+      - ./data:/data
     restart: unless-stopped

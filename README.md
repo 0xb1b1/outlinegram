@@ -11,6 +11,11 @@ This Docker Image allows Outline Server administrators to control their instance
 ## Build image
 
 ```bash
-# Change directory to this repository
 docker build -t 0xb1b1/outlinegram:latest .
+```
+
+## Build image and start container in detached mode
+
+```bash
+docker-compose up -d
 ```
