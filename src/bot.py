@@ -38,7 +38,7 @@ ch.setFormatter(formatter)
 log.addHandler(ch)
 
 # Create file logging handler and set its level
-fh = logging.FileHandler(r'main.py.log')
+fh = logging.FileHandler(r'bot.py.log')
 fh.setFormatter(formatter)
 log.addHandler(fh)
 
@@ -154,6 +154,7 @@ async def answer(message: types.Message) -> None:
                                replies.ask_for_security_code(),
                                reply_markup=nav.notAuthorizedMenu)
         await StateUserAuthorization.state_user_authorization.set()
+        return None
 
     elif not admin.is_admin(str(message.from_user.id)):
         await bot.send_message(message.from_user.id,
