@@ -236,7 +236,7 @@ async def outline_delete_user(message: types.Message, state: FSMContext) -> None
 # User Access URL retrieval
 @dp.message_handler(state=StateGetAccessURL.state_get_access_url)
 async def get_access_url(message: types.Message, state: FSMContext) -> None:
-    """Gets Outline Server username and send its Access URL"""
+    """Gets Outline Server Access URL by username"""
     await state.finish()
     access_url = outline.get_access_url(message.text)
     if access_url is not None:
