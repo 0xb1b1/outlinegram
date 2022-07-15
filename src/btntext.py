@@ -1,0 +1,8 @@
+CREATE_USER = "Create user"
+DELETE_USER = "Delete user"
+NOT_AUTHORIZED = "Not authorized"
+ENTER_SECURITY_CODE = "Enter security code"
+GET_ACCESS_URL = "Get access URL"
+MAIN_INSTRUCTIONS = "Instructions"
+INL_INST_IOS="iOS"
+INL_INST_ANDROID="Android"

@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+    environment:
+      - TELEGRAM_API_TOKEN='1234567890:TELEG-RAMTO_KEN'
+      - ADMIN_SECRET='adminSecretString_12345'
+      - LOGGING_LEVEL='info'
+      - OUTLINE_SERVER='0.0.0.0'
+      - OUTLINE_API_PORT='12345'
+      - OUTLINE_API_TOKEN='apiToken12345'
+    restart: unless-stopped
