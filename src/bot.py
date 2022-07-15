@@ -1,30 +1,28 @@
 """Opens AIOgram listener, admin tracker, and Outline API;
 Answers messages sent through the Telegram bot corresponding to ENV TELEGRAM_API_TOKEN"""
 
+#region Dependencices
 import os   # For signal (graceful shutdown)
 import signal   # For graceful shutdown
 import logging  # Logging important events
-#import asyncio  # For sleep()
-#from datetime import datetime
 from types import NoneType   # Subscription checks
 from aiogram import Bot, Dispatcher, executor, types  # Telegram API
 from aiogram.types.message import ParseMode
-#from aiogram import utils as aioutils
-#from aiogram.types import InputFile
 from dotenv import load_dotenv  # API tokens are stored in the .env file
-### Admin broadcast deps START
+# States
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-### Admin broadcast deps END
 from urllib3 import disable_warnings as disable_insecure_https_warnings
+# .py files
 import markup as nav    # Bot menus
-import btntext   # Telegram bot button text
-import replies   # Telegram bot information output
+import btntext          # Telegram bot button text
+import replies          # Telegram bot information output
 import admin as admin_python     # Administration control
-import outline as outline_api
+import outline as outline_api    # Outline Server management
+#endregion
 
-# Logging
+#region Logging
 # Create a logger instance
 log = logging.getLogger('main.py-aiogram')
 
@@ -59,6 +57,7 @@ match os.getenv('LOGGING_LEVEL').lower():
     case 'critical':
         log.setLevel(logging.CRITICAL)
         log.critical("Log level set to critical")
+#endregion
 
 # Check if we are under Docker
 DOCKER_MODE = False
@@ -70,6 +69,7 @@ if os.getenv("DOCKER_MODE") == 'true':
 if not DOCKER_MODE:
     load_dotenv()
 
+#region AIOgramDispatcherStates
 # Add user State
 class StateCreateUser(StatesGroup):
     state_create_user = State()
@@ -85,12 +85,7 @@ class StateUserAuthorization(StatesGroup):
 # Get Access URL State
 class StateGetAccessURL(StatesGroup):
     state_get_access_url = State()
-
-# # Admin handling (user expiration)
-# class AdminStateExpiration(StatesGroup):
-#     telegram_id = State()
-#     expiration_date = State()
-# admin_set_expiration_tgid = ''
+#endregion
 
 # Disable insecure HTTPS warnings
 disable_insecure_https_warnings()
@@ -100,20 +95,6 @@ outline = outline_api.OutlineAPI(os.getenv('OUTLINE_SERVER'),
                                  os.getenv('OUTLINE_API_PORT'),
                                  os.getenv('OUTLINE_API_TOKEN'))
 
-# System handling
-class GracefulKiller:
-    """Watches for SIGTERM and SIGKILL signals;
-    if received, exits gracefully"""
-    kill_now = False
-
-    def __init__(self):
-        signal.signal(signal.SIGINT, self.exit_gracefully)
-        signal.signal(signal.SIGTERM, self.exit_gracefully)
-
-    def exit_gracefully(self, *args):
-        """Exits gracefully"""
-        exit(0)
-
 # Get Telegram API token
 TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
 
@@ -122,15 +103,9 @@ bot = Bot(token=TELEGRAM_API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 # Initialize administration control
-admin = admin_python.AdminTracker(os.getenv("ADMIN_SECRET"), docker_mode=True)
+admin = admin_python.AdminTracker(os.getenv("ADMIN_SECRET"), docker_mode=DOCKER_MODE)
 
-# Bot menu and replies
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message) -> None:
-    """Sends welcome message and inits user's record in DB"""
-    await message.reply(replies.welcome_message(message.from_user.first_name),
-                        reply_markup=nav.notAuthorizedMenu)
-
+#region CustomFunctions
 def get_usernames_str() -> str:
         usernames = outline.get_key_names()
         usernames_str = ""
@@ -138,13 +113,22 @@ def get_usernames_str() -> str:
             usernames_str += username
             usernames_str += '\n'
         return usernames_str
+#endregion
+
+#region BotReplies
+# Command message handling
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message) -> None:
+    """Sends welcome message and inits user's record in DB"""
+    await message.reply(replies.welcome_message(message.from_user.first_name),
+                        reply_markup=nav.notAuthorizedMenu)
 
 @dp.message_handler(commands=['help'])
 async def send_help(message: types.Message) -> None:
     """Sends help message"""
     await message.reply(replies.help_message(), reply_markup=nav.mainMenu)
 
-# Command handling
+# Normal message handling
 @dp.message_handler()
 async def answer(message: types.Message) -> None:
     """Answers to random messages and messages from buttons"""
@@ -178,7 +162,6 @@ async def answer(message: types.Message) -> None:
                                get_usernames_str(),
                                reply_markup=nav.mainMenu)
 
-    # Main menu buttons
     elif message.text == btntext.GET_ACCESS_URL:
         await StateGetAccessURL.state_get_access_url.set()
         await bot.send_message(message.from_user.id,
@@ -200,8 +183,8 @@ async def answer(message: types.Message) -> None:
                                reply_markup=nav.inlInstructionsKb)
         log.debug(f"{message.from_user.id}: Opened instructions menu")
 
+    # Handle everything else
     else:
-        # Handle everything else
         if admin.is_admin(str(message.from_user.id)):
             reply_markup = nav.mainMenu
         else:
@@ -211,10 +194,11 @@ async def answer(message: types.Message) -> None:
                             reply_markup=reply_markup)
         log.debug(f"{message.from_user.id}: Sent an unknown command: {message.text}")
 
-
-# Unauthorized user handling
+## State messages handling
+# Unauthorized user
 @dp.message_handler(state=StateUserAuthorization.state_user_authorization)
 async def add_user_to_admins(message: types.Message, state: FSMContext) -> None:
+    """Adds user to administrator list if their key matches ADMIN_SECRET"""
     await state.finish()
     if admin.add(str(message.from_user.id), message.text):
         await bot.send_message(message.from_user.id,
@@ -225,8 +209,10 @@ async def add_user_to_admins(message: types.Message, state: FSMContext) -> None:
                            replies.inform_not_admin(),
                            reply_markup=nav.notAuthorizedMenu)
 
+# User creation
 @dp.message_handler(state=StateCreateUser.state_create_user)
-async def outline_create_new_user(message: types.Message, state: FSMContext) -> None:
+async def outline_create_user(message: types.Message, state: FSMContext) -> None:
+    """Creates new Outline server username"""
     await state.finish()
     if outline.create_user(message.text):
         await bot.send_message(message.from_user.id,
@@ -237,16 +223,20 @@ async def outline_create_new_user(message: types.Message, state: FSMContext) -> 
                                replies.user_not_created(message.text),
                                reply_markup=nav.mainMenu)
 
+# User removal
 @dp.message_handler(state=StateDeleteUser.state_delete_user)
 async def outline_delete_user(message: types.Message, state: FSMContext) -> None:
+    """Removes Outline Server username from the server"""
     await state.finish()
     outline.delete_user(message.text)
     await bot.send_message(message.from_user.id,
                             replies.user_deleted(message.text),
                             reply_markup=nav.mainMenu)
 
+# User Access URL retrieval
 @dp.message_handler(state=StateGetAccessURL.state_get_access_url)
 async def get_access_url(message: types.Message, state: FSMContext) -> None:
+    """Gets Outline Server username and send its Access URL"""
     await state.finish()
     access_url = outline.get_access_url(message.text)
     if access_url is not None:
@@ -257,12 +247,12 @@ async def get_access_url(message: types.Message, state: FSMContext) -> None:
     await bot.send_message(message.from_user.id,
                            replies.user_not_found(message.text),
                            reply_markup=nav.mainMenu)
+#endregion
 
-
+#region StartUp
 def run() -> None:
     log.info('Starting...')
-    killer = GracefulKiller()
-    log.info('Process manager is up')
-    log.info('Starting aiogram...')
+    log.info('Starting AIOgram...')
     executor.start_polling(dp, skip_updates=True)
-    log.info('aiogram stopped successfully')
+    log.info('AIOgram stopped successfully')
+#endregion
