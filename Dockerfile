@@ -1,7 +1,7 @@
 FROM python:3.10.5-slim
 
 # Create environment variables
-ENV ADMIN_SECRET=''
+ENV ADMIN_SECRET='DISABLED'
 ENV LOGGING_LEVEL='debug'
 ENV DOCKER_MODE='true'
 
