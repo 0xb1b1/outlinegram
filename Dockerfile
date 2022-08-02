@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Copy dependency list and install the packages
 COPY src/requirements.txt ./
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Bundle app source
 COPY src /app
