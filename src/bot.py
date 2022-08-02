@@ -115,12 +115,12 @@ admin = admin_python.AdminTracker(os.getenv("ADMIN_SECRET"), docker_mode=DOCKER_
 
 # region CustomFunctions
 def get_usernames_str() -> str:
-        usernames = outline.get_key_names()
-        usernames_str = ""
-        for username in usernames:
-            usernames_str += username
-            usernames_str += '\n'
-        return usernames_str
+    usernames = outline.get_key_names()
+    usernames_str = ""
+    for username in usernames:
+        usernames_str += username
+        usernames_str += '\n'
+    return usernames_str
 # endregion
 
 
@@ -206,7 +206,7 @@ async def answer(message: types.Message) -> None:
         log.debug(f"{message.from_user.id}: Sent an unknown command: {message.text}")
 
 
-## State messages handling
+# State messages handling
 # Unauthorized user
 @dp.message_handler(state=StateUserAuthorization.state_user_authorization)
 async def add_user_to_admins(message: types.Message, state: FSMContext) -> None:

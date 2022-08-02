@@ -1,6 +1,7 @@
 """Manages administration privileges"""
 import os
 
+
 class AdminTracker:
     def __init__(self, secret: str,
                  csv_header: str = 'telegram_id,clearance',

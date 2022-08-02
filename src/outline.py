@@ -1,5 +1,6 @@
 from outline_vpn.outline_vpn import OutlineVPN
 
+
 class OutlineAPI:
     def __init__(self, host: str, port: int, key: str) -> None:
         self.client = OutlineVPN(api_url=f"https://{host}:{port}/{key}")

@@ -4,15 +4,15 @@ type: docker
 name: default
 
 steps:
-- name: lint
-  image: 0xb1b1/drone-linter
-- name: docker-build
-  image: plugins/docker
-  pull: never
-  settings:
-    repo: 0xb1b1/outlinegram
-    tags: latest
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
+  - name: lint
+    image: 0xb1b1/drone-linter
+  - name: docker-build
+    image: plugins/docker
+    pull: never
+    settings:
+      repo: 0xb1b1/outlinegram
+      tags: latest
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password

@@ -50,7 +50,7 @@ def user_deleted(username: str) -> str:
 
 def instructions() -> str:
     """Gives the user instructions"""
-    return f"Not implemented! :("
+    return "Not implemented! :("
 
 
 def get_access_url_ask_for_username() -> str:
