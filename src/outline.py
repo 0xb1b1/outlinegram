@@ -3,13 +3,13 @@ from outline_vpn.outline_vpn import OutlineVPN
 class OutlineAPI:
     def __init__(self, host: str, port: int, key: str) -> None:
         self.client = OutlineVPN(api_url=f"https://{host}:{port}/{key}")
-    
+
     def _get_access_urls(self) -> list:
         return [i.access_url for i in self.client.get_keys()]
 
     def _get_key_ids(self) -> list:
         return [i.key_id for i in self.client.get_keys()]
-    
+
     def _get_access_port(self) -> int:
         """Sets Outline access port for new users"""
         return self.client.get_server_information().portForNewAccessKeys()
@@ -17,8 +17,10 @@ class OutlineAPI:
     def _set_access_port(self, port: int) -> bool:
         """Sets Outline access port for new users and returns True on success
         On error code 409 (port used by other service) raises Exception; else returns False"""
-        if type(port) is not int: raise Exception("`port' is not an integer")
-        if not 0 < port < 65536: raise Exception("The requested port wasn't an integer from 1 through 65535")
+        if type(port) is not int:
+            raise Exception("`port' is not an integer")
+        if not 0 < port < 65536:
+            raise Exception("The requested port wasn't an integer from 1 through 65535")
         return self.client.set_port_new_for_access_keys(port)
 
     def _get_key_id(self, username: str) -> int:
@@ -26,13 +28,13 @@ class OutlineAPI:
             return 0
         clients = self.client.get_keys()
         return next((i.key_id for i in clients if i.name == username), None)
-    
+
     def get_key_names(self) -> list:
         return [i.name for i in self.client.get_keys()]
 
     def create_user(self, username: str) -> bool:
         """Creates a new Outline user and sets their username"""
-        if not username in self.get_key_names() and username != 'admin':
+        if username not in self.get_key_names() and username != 'admin':
             key_id = self.client.create_key().key_id
             self.client.rename_key(key_id, username)
             return True
@@ -53,7 +55,8 @@ class OutlineAPI:
         try:
             self.client.add_data_limit(self._get_key_id(username), 0)
             return True
-        except: return False
+        except Exception:
+            return False
 
     def unrevoke(self, username: str) -> None:
         """Removes Outline username's data limit"""
@@ -62,7 +65,7 @@ class OutlineAPI:
     def is_revoked(self, username: str) -> bool:
         """[NOT IMPLEMENTED] Returns True is username is revoked, else False"""
         pass
-    
+
     def get_usage(self, username: str) -> int:
         """Returns Gigabytes transferred by username in 30 days"""
         try:
@@ -75,4 +78,4 @@ class OutlineAPI:
 
     def get_server_usage(self) -> int:
         """[NOT IMPLEMENTED] Returns Gigabytes transferred by all users in 30 days"""
-        pass #return self.server.get
+        pass  # return self.server.get

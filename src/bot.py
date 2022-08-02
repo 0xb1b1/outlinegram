@@ -1,7 +1,7 @@
 """Opens AIOgram listener, admin tracker, and Outline API;
 Answers messages sent through the Telegram bot corresponding to ENV TELEGRAM_API_TOKEN"""
 
-#region Dependencices
+# region Dependencices
 import os   # For signal (graceful shutdown)
 import signal   # For graceful shutdown
 import logging  # Logging important events
@@ -20,9 +20,9 @@ import btntext          # Telegram bot button text
 import replies          # Telegram bot information output
 import admin as admin_python     # Administration control
 import outline as outline_api    # Outline Server management
-#endregion
+# endregion
 
-#region Logging
+# region Logging
 # Create a logger instance
 log = logging.getLogger('main.py-aiogram')
 
@@ -41,23 +41,25 @@ fh.setFormatter(formatter)
 log.addHandler(fh)
 
 # Set logging level
-match os.getenv('LOGGING_LEVEL').lower():
-    case 'debug':
-        log.setLevel(logging.DEBUG)
-        log.critical("Log level set to debug")
-    case 'info':
-        log.setLevel(logging.INFO)
-        log.critical("Log level set to info")
-    case 'warning':
-        log.setLevel(logging.WARNING)
-        log.critical("Log level set to warning")
-    case 'error':
-        log.setLevel(logging.ERROR)
-        log.critical("Log level set to error")
-    case 'critical':
-        log.setLevel(logging.CRITICAL)
-        log.critical("Log level set to critical")
-#endregion
+# Set logging level
+# TODO: Convert back to match-case when pylint implements .this
+logging_level_lower = os.getenv('LOGGING_LEVEL').lower()
+if logging_level_lower == 'debug':
+    log.setLevel(logging.DEBUG)
+    log.critical("Log level set to debug")
+elif logging_level_lower == 'info':
+    log.setLevel(logging.INFO)
+    log.critical("Log level set to info")
+elif logging_level_lower == 'warning':
+    log.setLevel(logging.WARNING)
+    log.critical("Log level set to warning")
+elif logging_level_lower == 'error':
+    log.setLevel(logging.ERROR)
+    log.critical("Log level set to error")
+elif logging_level_lower == 'critical':
+    log.setLevel(logging.CRITICAL)
+    log.critical("Log level set to critical")
+# endregion
 
 # Check if we are under Docker
 DOCKER_MODE = False
@@ -69,23 +71,28 @@ if os.getenv("DOCKER_MODE") == 'true':
 if not DOCKER_MODE:
     load_dotenv()
 
-#region AIOgramDispatcherStates
+
+# region AIOgramDispatcherStates
 # Add user State
 class StateCreateUser(StatesGroup):
     state_create_user = State()
+
 
 # Delete user State
 class StateDeleteUser(StatesGroup):
     state_delete_user = State()
 
+
 # Authorization user State
 class StateUserAuthorization(StatesGroup):
     state_user_authorization = State()
 
+
 # Get Access URL State
 class StateGetAccessURL(StatesGroup):
     state_get_access_url = State()
-#endregion
+# endregion
+
 
 # Disable insecure HTTPS warnings
 disable_insecure_https_warnings()
@@ -105,7 +112,8 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 # Initialize administration control
 admin = admin_python.AdminTracker(os.getenv("ADMIN_SECRET"), docker_mode=DOCKER_MODE)
 
-#region CustomFunctions
+
+# region CustomFunctions
 def get_usernames_str() -> str:
         usernames = outline.get_key_names()
         usernames_str = ""
@@ -113,9 +121,10 @@ def get_usernames_str() -> str:
             usernames_str += username
             usernames_str += '\n'
         return usernames_str
-#endregion
+# endregion
 
-#region BotReplies
+
+# region BotReplies
 # Command message handling
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message) -> None:
@@ -123,16 +132,18 @@ async def send_welcome(message: types.Message) -> None:
     await message.reply(replies.welcome_message(message.from_user.first_name),
                         reply_markup=nav.notAuthorizedMenu)
 
+
 @dp.message_handler(commands=['help'])
 async def send_help(message: types.Message) -> None:
     """Sends help message"""
     await message.reply(replies.help_message(), reply_markup=nav.mainMenu)
 
+
 # Normal message handling
 @dp.message_handler()
 async def answer(message: types.Message) -> None:
     """Answers to random messages and messages from buttons"""
-    # Menues
+    # Menus
     if message.text == btntext.ENTER_SECURITY_CODE:
         await bot.send_message(message.from_user.id,
                                replies.ask_for_security_code(),
@@ -152,7 +163,7 @@ async def answer(message: types.Message) -> None:
                                reply_markup=nav.mainMenu)
         await StateCreateUser.state_create_user.set()
         log.debug(f"{message.from_user.id}: Create user access granted")
-    
+
     elif message.text == btntext.DELETE_USER:
         await StateDeleteUser.state_delete_user.set()
         await bot.send_message(message.from_user.id,
@@ -176,7 +187,7 @@ async def answer(message: types.Message) -> None:
         await StateCreateUser.state_create_user.set()
         # Ask the user for the secret code
         await message.reply(replies.ask_for_security_code())
-    
+
     elif message.text == btntext.MAIN_INSTRUCTIONS:
         await bot.send_message(message.from_user.id,
                                replies.instructions(),
@@ -190,9 +201,10 @@ async def answer(message: types.Message) -> None:
         else:
             reply_markup = nav.notAuthorizedMenu
         await bot.send_message(message.from_user.id,
-                            replies.user_unknown_command(message.text),
-                            reply_markup=reply_markup)
+                               replies.user_unknown_command(message.text),
+                               reply_markup=reply_markup)
         log.debug(f"{message.from_user.id}: Sent an unknown command: {message.text}")
+
 
 ## State messages handling
 # Unauthorized user
@@ -209,6 +221,7 @@ async def add_user_to_admins(message: types.Message, state: FSMContext) -> None:
                            replies.inform_not_admin(),
                            reply_markup=nav.notAuthorizedMenu)
 
+
 # User creation
 @dp.message_handler(state=StateCreateUser.state_create_user)
 async def outline_create_user(message: types.Message, state: FSMContext) -> None:
@@ -223,6 +236,7 @@ async def outline_create_user(message: types.Message, state: FSMContext) -> None
                                replies.user_not_created(message.text),
                                reply_markup=nav.mainMenu)
 
+
 # User removal
 @dp.message_handler(state=StateDeleteUser.state_delete_user)
 async def outline_delete_user(message: types.Message, state: FSMContext) -> None:
@@ -230,8 +244,9 @@ async def outline_delete_user(message: types.Message, state: FSMContext) -> None
     await state.finish()
     outline.delete_user(message.text)
     await bot.send_message(message.from_user.id,
-                            replies.user_deleted(message.text),
-                            reply_markup=nav.mainMenu)
+                           replies.user_deleted(message.text),
+                           reply_markup=nav.mainMenu)
+
 
 # User Access URL retrieval
 @dp.message_handler(state=StateGetAccessURL.state_get_access_url)
@@ -247,12 +262,13 @@ async def get_access_url(message: types.Message, state: FSMContext) -> None:
     await bot.send_message(message.from_user.id,
                            replies.user_not_found(message.text),
                            reply_markup=nav.mainMenu)
-#endregion
+# endregion
 
-#region StartUp
+
+# region StartUp
 def run() -> None:
     log.info('Starting...')
     log.info('Starting AIOgram...')
     executor.start_polling(dp, skip_updates=True)
     log.info('AIOgram stopped successfully')
-#endregion
+# endregion
