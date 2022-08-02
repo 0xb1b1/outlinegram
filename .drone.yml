@@ -3,6 +3,8 @@ type: docker
 name: default
 
 steps:
+- name: lint
+  image: 0xb1b1/drone-linter
 - name: docker-build
   image: plugins/docker
   pull: never
