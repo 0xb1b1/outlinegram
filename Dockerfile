@@ -1,4 +1,4 @@
-FROM python:3.10.5-slim
+FROM python:3.12.0b1-slim
 
 # Create environment variables
 ENV ADMIN_SECRET='DISABLED'
